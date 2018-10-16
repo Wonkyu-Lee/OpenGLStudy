@@ -24,7 +24,7 @@ void main(void) {
 
 const GLchar* FRAGMENT_SHADER[] = {R"(
 #version 410 core
-out vec4 color
+out vec4 color;
 void main(void) {
     color = vec4(0.0, 0.8, 1.0, 1.0);
 }
@@ -47,9 +47,9 @@ void TessellationApp::onAcquireContext() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glPointSize(40.0f);
 
-    auto compileShader = [](const GLchar* shaderSourceCode, bool isVertexShader) {
+    auto compileShader = [](const GLchar** shaderSourceCode, bool isVertexShader) {
         auto shader = glCreateShader(isVertexShader ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
-        glShaderSource(shader, 1, VERTEX_SHADER, nullptr);
+        glShaderSource(shader, 1, shaderSourceCode, nullptr);
         glCompileShader(shader);
 
         GLint compileStatus;
@@ -61,15 +61,15 @@ void TessellationApp::onAcquireContext() {
             GLsizei compileLogLength;
             glGetShaderInfoLog(shader, LOG_MAX_LENGTH, &compileLogLength, compileLog.data());
             cout << "log length: " << compileLogLength << endl;
-            cerr << (isVertexShader ? "vertex" : "fragment") << "shader compile error: " << compileLog.data() << endl;
+            cerr << (isVertexShader ? "vertex" : "fragment") << " shader compile error: " << compileLog.data() << endl;
             return 0u;
         }
         
         return shader;
     };
 
-    auto vertexShader = compileShader(VERTEX_SHADER[0], true);
-    auto fragmentShader = compileShader(FRAGMENT_SHADER[0], false);
+    auto vertexShader = compileShader(VERTEX_SHADER, true);
+    auto fragmentShader = compileShader(FRAGMENT_SHADER, false);
 
     if (!vertexShader || !fragmentShader) {
         cerr << "failed to compile shader. please refer the error log above." << endl;
