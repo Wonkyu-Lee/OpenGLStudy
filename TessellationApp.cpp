@@ -4,13 +4,13 @@
 
 #include "TessellationApp.h"
 #include <iostream>
-#include <vector>
+#include <sstream>
 
 using namespace std;
 
 namespace {
 
-const GLchar* VERTEX_SHADER[] = {R"(
+const GLchar* VERTEX_SHADER = R"(
 #version 410 core
 void main(void) {
     const vec4 vertices[3] = vec4[3](
@@ -20,21 +20,62 @@ void main(void) {
     );
     gl_Position = vertices[gl_VertexID];
 }
-)"};
+)";
 
-const GLchar* FRAGMENT_SHADER[] = {R"(
+const GLchar* FRAGMENT_SHADER = R"(
 #version 410 core
 out vec4 color;
 void main(void) {
     color = vec4(0.0, 0.8, 1.0, 1.0);
 }
-)"};
+)";
 
-void checkGlError() {
+void assertGlValid() {
     GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        cout << "error = 0x" << hex << error << endl;
+    if (error == GL_NO_ERROR)
+        return;
+
+    string msg;
+    switch (error) {
+        case GL_INVALID_ENUM:
+            msg = "GL_INVALID_ENUM";
+            break;
+        case GL_INVALID_VALUE:
+            msg = "GL_INVALID_VALUE";
+            break;
+        case GL_INVALID_OPERATION:
+            msg = "GL_INVALID_OPERATION";
+            break;
+        case GL_OUT_OF_MEMORY:
+            msg = "GL_OUT_OF_MEMORY";
+            break;
+        default:
+            msg = "Unknown error!";
     }
+
+    stringstream out;
+    out  << "[gl error] = " << msg << endl;
+    cerr << out.str();
+
+    assert(false);
+}
+
+GLuint compileShader(const GLchar* source, GLenum type) {
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, nullptr);
+    glCompileShader(shader);
+
+    GLint compileStatus;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
+    if (compileStatus == GL_TRUE)
+        return shader;
+
+    const GLsizei BUFFER_SIZE = 4096;
+    GLsizei length;
+    GLchar infoLog[BUFFER_SIZE];
+    glGetShaderInfoLog(shader, 4096, &length, infoLog);
+    cerr << infoLog << endl;
+    return 0u;
 }
 
 } // namespace
@@ -47,53 +88,20 @@ void TessellationApp::onAcquireContext() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glPointSize(40.0f);
 
-    auto compileShader = [](const GLchar** shaderSourceCode, bool isVertexShader) {
-        auto shader = glCreateShader(isVertexShader ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
-        glShaderSource(shader, 1, shaderSourceCode, nullptr);
-        glCompileShader(shader);
-
-        GLint compileStatus;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
-        if (!compileStatus) {
-            const GLsizei LOG_MAX_LENGTH = 4096;
-            vector<GLchar> compileLog;
-            compileLog.resize(LOG_MAX_LENGTH);
-            GLsizei compileLogLength;
-            glGetShaderInfoLog(shader, LOG_MAX_LENGTH, &compileLogLength, compileLog.data());
-            cout << "log length: " << compileLogLength << endl;
-            cerr << (isVertexShader ? "vertex" : "fragment") << " shader compile error: " << compileLog.data() << endl;
-            return 0u;
-        }
-        
-        return shader;
-    };
-
-    auto vertexShader = compileShader(VERTEX_SHADER, true);
-    auto fragmentShader = compileShader(FRAGMENT_SHADER, false);
-
-    if (!vertexShader || !fragmentShader) {
-        cerr << "failed to compile shader. please refer the error log above." << endl;
-        _program = 0;
-        return;
-    }
+    GLuint vertexShader = compileShader(VERTEX_SHADER, GL_VERTEX_SHADER);
+    GLuint fragmentShader = compileShader(FRAGMENT_SHADER, GL_FRAGMENT_SHADER);
 
     _program = glCreateProgram();
-    checkGlError();
     glAttachShader(_program, vertexShader);
-    checkGlError();
     glAttachShader(_program, fragmentShader);
-    checkGlError();
     glLinkProgram(_program);
-    checkGlError();
 
     glDeleteShader(vertexShader);
-    checkGlError();
-
     glDeleteShader(fragmentShader);
-    checkGlError();
 
     glGenVertexArrays(1, &_vao);
-    checkGlError();
+
+    assertGlValid();
 }
 
 void TessellationApp::onReleaseContext() {
@@ -137,16 +145,7 @@ bool TessellationApp::onUpdate() {
 
 void TessellationApp::onDraw() {
     glClear(GL_COLOR_BUFFER_BIT);
-    checkGlError();
-
-    if (!_program)
-        return;
     glUseProgram(_program);
-    checkGlError();
-
     glBindVertexArray(_vao);
-    checkGlError();
-
     glDrawArrays(GL_TRIANGLES, 0, 3);
-    checkGlError();
 }
