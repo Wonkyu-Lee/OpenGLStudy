@@ -13,9 +13,11 @@
 
 namespace gl {
 
-std::vector<GLenum> collectErrors();
-const char* getErrorMessage(GLenum error);
+const std::string& strErrorCode(GLenum errorCode);
+const std::string& strShaderType(GLenum shaderType);
 void flushErrors(std::ostream& out);
+std::vector<GLenum> collectErrors();
+
 GLuint compileShader(const GLchar* source, GLenum type);
 
 } // namespace gl

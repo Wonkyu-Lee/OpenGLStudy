@@ -10,9 +10,9 @@
 class TessellationApp : public Application {
 public:
     TessellationApp(
-            const std::string& name,
-            int width, int height)
-            : Application(name, width, height) {}
+        const std::string& name,
+        int width, int height)
+        : Application(name, width, height) {}
 
     void onAcquireContext() override;
     void onReleaseContext() override;

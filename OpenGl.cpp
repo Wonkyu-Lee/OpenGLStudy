@@ -10,27 +10,32 @@ namespace gl {
 
 using namespace std;
 
-vector<GLenum> collectErrors() {
-    vector<GLenum> errors;
-    GLenum error;
-    while ((error = glGetError()) != GL_NO_ERROR) {
-        errors.push_back(error);
-    }
-    return errors;
-}
-
-const char* getErrorMessage(GLenum error) {
-    static const string UNKNOWN_ERROR = "Unknown error!";
-    static const unordered_map<GLenum, string> ERROR_CODES = {
-        { GL_INVALID_ENUM, "GL_INVALID_ENUM" },
-        { GL_INVALID_VALUE, "GL_INVALID_VALUE" },
-        { GL_INVALID_OPERATION, "GL_INVALID_OPERATION" },
-        { GL_INVALID_FRAMEBUFFER_OPERATION, "GL_INVALID_FRAMEBUFFER_OPERATION" },
-        { GL_OUT_OF_MEMORY, "GL_OUT_OF_MEMORY" },
+const std::string& strErrorCode(GLenum errorCode) {
+    static const string UNKNOWN = "Unknown";
+    static const unordered_map<GLenum, string> MAP = {
+            { GL_INVALID_ENUM, "GL_INVALID_ENUM" },
+            { GL_INVALID_VALUE, "GL_INVALID_VALUE" },
+            { GL_INVALID_OPERATION, "GL_INVALID_OPERATION" },
+            { GL_INVALID_FRAMEBUFFER_OPERATION, "GL_INVALID_FRAMEBUFFER_OPERATION" },
+            { GL_OUT_OF_MEMORY, "GL_OUT_OF_MEMORY" },
     };
 
-    auto found = ERROR_CODES.find(error);
-    return (found != ERROR_CODES.end() ? found->second : UNKNOWN_ERROR).c_str();
+    auto found = MAP.find(errorCode);
+    return (found != MAP.end() ? found->second : UNKNOWN);
+}
+
+const std::string& strShaderType(GLenum shaderType) {
+    static const string UNKNOWN = "Unknown";
+    static const unordered_map<GLenum, string> MAP = {
+            { GL_VERTEX_SHADER, "GL_VERTEX_SHADER" },
+            { GL_TESS_CONTROL_SHADER, "GL_TESS_CONTROL_SHADER" },
+            { GL_TESS_EVALUATION_SHADER, "GL_TESS_EVALUATION_SHADER" },
+            { GL_GEOMETRY_SHADER, "GL_GEOMETRY_SHADER" },
+            { GL_FRAGMENT_SHADER, "GL_FRAGMENT_SHADER" },
+    };
+
+    auto found = MAP.find(shaderType);
+    return (found != MAP.end() ? found->second : UNKNOWN);
 }
 
 void flushErrors(ostream& out) {
@@ -39,8 +44,17 @@ void flushErrors(ostream& out) {
         return;
 
     for (auto each : errors) {
-        out  << "[gl error] = " << getErrorMessage(each) << endl;
+        out  << "[gl error] = " << strErrorCode(each) << endl;
     }
+}
+
+vector<GLenum> collectErrors() {
+    vector<GLenum> errors;
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        errors.push_back(error);
+    }
+    return errors;
 }
 
 GLuint compileShader(const GLchar* source, GLenum type) {
@@ -57,7 +71,7 @@ GLuint compileShader(const GLchar* source, GLenum type) {
     GLsizei length;
     GLchar infoLog[BUFFER_SIZE];
     glGetShaderInfoLog(shader, BUFFER_SIZE, &length, infoLog);
-    cerr << infoLog << endl;
+    cerr << "[glsl error:" << strShaderType(type) << "]" << infoLog << endl;
     return 0u;
 }
 
