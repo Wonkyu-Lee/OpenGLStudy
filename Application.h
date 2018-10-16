@@ -5,10 +5,7 @@
 #ifndef OPENGL_APPLICATION_H
 #define OPENGL_APPLICATION_H
 
-#include <string>
-#include <memory>
-#include <SDL.h>
-#include <OpenGL/gl3.h>
+#include "OpenGl.h"
 
 class Application {
 public:

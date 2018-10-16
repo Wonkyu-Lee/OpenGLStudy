@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 project(opengl)
 
 set(CMAKE_CXX_STANDARD 17)
-add_executable(opengl Driver.cpp Application.h TessellationApp.cpp TessellationApp.h)
+add_executable(opengl Driver.cpp Application.h TessellationApp.cpp TessellationApp.h OpenGl.cpp OpenGl.h)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
