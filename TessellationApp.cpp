@@ -4,6 +4,7 @@
 
 #include "TessellationApp.h"
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -23,7 +24,7 @@ void main(void) {
 
 const GLchar* FRAGMENT_SHADER[] = {R"(
 #version 410 core
-out vec4 color
+out vec4 color;
 void main(void) {
     color = vec4(0.0, 0.8, 1.0, 1.0);
 }
@@ -46,15 +47,35 @@ void TessellationApp::onAcquireContext() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glPointSize(40.0f);
 
-    auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, VERTEX_SHADER, nullptr);
-    glCompileShader(vertexShader);
-    checkGlError();
+    auto compileShader = [](const GLchar** shaderSourceCode, bool isVertexShader) {
+        auto shader = glCreateShader(isVertexShader ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
+        glShaderSource(shader, 1, shaderSourceCode, nullptr);
+        glCompileShader(shader);
 
-    auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, FRAGMENT_SHADER, nullptr);
-    glCompileShader(fragmentShader);
-    checkGlError();
+        GLint compileStatus;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
+        if (!compileStatus) {
+            const GLsizei LOG_MAX_LENGTH = 4096;
+            vector<GLchar> compileLog;
+            compileLog.resize(LOG_MAX_LENGTH);
+            GLsizei compileLogLength;
+            glGetShaderInfoLog(shader, LOG_MAX_LENGTH, &compileLogLength, compileLog.data());
+            cout << "log length: " << compileLogLength << endl;
+            cerr << (isVertexShader ? "vertex" : "fragment") << " shader compile error: " << compileLog.data() << endl;
+            return 0u;
+        }
+        
+        return shader;
+    };
+
+    auto vertexShader = compileShader(VERTEX_SHADER, true);
+    auto fragmentShader = compileShader(FRAGMENT_SHADER, false);
+
+    if (!vertexShader || !fragmentShader) {
+        cerr << "failed to compile shader. please refer the error log above." << endl;
+        _program = 0;
+        return;
+    }
 
     _program = glCreateProgram();
     checkGlError();
@@ -118,6 +139,8 @@ void TessellationApp::onDraw() {
     glClear(GL_COLOR_BUFFER_BIT);
     checkGlError();
 
+    if (!_program)
+        return;
     glUseProgram(_program);
     checkGlError();
 
