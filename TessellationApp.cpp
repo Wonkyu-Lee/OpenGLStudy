@@ -6,8 +6,17 @@
 #include <iostream>
 #include <unordered_map>
 #include <vector>
+#include <sstream>
 
 using namespace std;
+
+/****************************************************************************************************************
+ * 체크리스트
+ * - GL 세팅값 출력: (GL_MAX_PATCH_VERTICES, GL_PATCH_DEFAULT_OUTER_LEVEL, GL_PATCH_DEFAULT_INNER_LEVEL)
+ * - spacing: (equal_spacing, fractional_even_spacing, fractional_odd_spacing)
+ * - input primitive type: (triangles, quads, isolines), point_mode
+ * - primitive generation order: (cw, ccw)
+ ****************************************************************************************************************/
 
 namespace {
 
@@ -28,10 +37,10 @@ const GLchar* TESS_CONTROL_SHADER = R"(
 layout (vertices = 3) out;
 void main(void) {
     if (gl_InvocationID == 0) {
-        gl_TessLevelInner[0] = 5.0;
-        gl_TessLevelOuter[0] = 5.0;
-        gl_TessLevelOuter[1] = 5.0;
-        gl_TessLevelOuter[2] = 5.0;
+        gl_TessLevelInner[0] = 1.0;
+        gl_TessLevelOuter[0] = 3.0;
+        gl_TessLevelOuter[1] = 1.0;
+        gl_TessLevelOuter[2] = 1.0;
     }
     gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 }
@@ -56,6 +65,32 @@ void main(void) {
 }
 )";
 
+void logProperties() {
+    GLint maxPatchVertices;
+    glGetIntegerv(GL_MAX_PATCH_VERTICES, &maxPatchVertices);
+    printf("GL_MAX_PATCH_VERTICES = %d\n", maxPatchVertices);
+
+    GLfloat patchDefaultOuterLevels[4];
+    glGetFloatv(GL_PATCH_DEFAULT_OUTER_LEVEL, patchDefaultOuterLevels);
+
+    GLfloat patchDefaultInnerLevels[2];
+    glGetFloatv(GL_PATCH_DEFAULT_INNER_LEVEL, patchDefaultInnerLevels);
+
+    {
+        assert(gl::get<GL_BLEND>() == GL_FALSE);
+        assert(gl::get<GL_MAX_PATCH_VERTICES>() == 32);
+        assert(gl::getv<GL_PATCH_DEFAULT_OUTER_LEVEL>() == vector<GLfloat>({1, 1, 1, 1}));
+        assert(gl::getv<GL_PATCH_DEFAULT_INNER_LEVEL>() == vector<GLfloat>({1, 1}));
+
+        cout << gl::str<GL_BLEND>() << endl;
+        cout << gl::str<GL_MAX_PATCH_VERTICES>() << endl;
+        cout << gl::str<GL_PATCH_DEFAULT_INNER_LEVEL>() << endl;
+        cout << gl::str<GL_PATCH_DEFAULT_OUTER_LEVEL>() << endl;
+
+        gl::flushErrors(cout);
+    }
+}
+
 } // namespace
 
 Application* Application::create() {
@@ -63,10 +98,11 @@ Application* Application::create() {
 }
 
 void TessellationApp::onAcquireContext() {
+    logProperties();
+
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    // glPatchParameteri(GL_PATCH_VERTICES, 3);
+    glPatchParameteri(GL_PATCH_VERTICES, 3); // same as default setting
 
     GLuint vertexShader = gl::compileShader(VERTEX_SHADER, GL_VERTEX_SHADER);
     GLuint tessControlShader = gl::compileShader(TESS_CONTROL_SHADER, GL_TESS_CONTROL_SHADER);
