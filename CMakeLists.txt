@@ -9,7 +9,6 @@ include(Dependencies.cmake)
 
 # opengl
 add_executable(opengl main.cpp Application.h TessellationApp.cpp TessellationApp.h OpenGl.cpp OpenGl.h Driver.cpp Driver.h OpenGlApiInfo.inl)
-
 target_include_directories(opengl PUBLIC ${DEP_INSTALL_DIR}/include)
 
 find_package(SDL2 REQUIRED)
