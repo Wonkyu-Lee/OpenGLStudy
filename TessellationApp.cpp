@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 #include <sstream>
+#include <catch2/catch.hpp>
+#include "Driver.h"
 
 using namespace std;
 
@@ -93,10 +95,6 @@ void logProperties() {
 
 } // namespace
 
-Application* Application::create() {
-    return new TessellationApp("tessellation", 512, 512);
-}
-
 void TessellationApp::onAcquireContext() {
     logProperties();
 
@@ -171,4 +169,8 @@ void TessellationApp::onDraw() {
     glBindVertexArray(_vao);
     glDrawArrays(GL_PATCHES, 0, 3);
     gl::flushErrors(cerr);
+}
+
+TEST_CASE("Tessellation", "[tessellation]") {
+    Driver::run<TessellationApp>("tessellation", 512, 512);
 }
