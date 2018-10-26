@@ -6,23 +6,22 @@
 #define OPENGL_APPLICATION_H
 
 #include "OpenGl.h"
+#include <memory>
 
 class Application {
 public:
-    static Application* create();
-
-    const std::string name() const { return _name; }
+    const std::string& name() const { return _name; }
     int width() const { return _width; }
     int height() const { return _height; }
 
     Application(
-            const std::string& name,
+            std::string name,
             int width, int height):
-            _name(name),
+            _name(std::move(name)),
             _width(width),
             _height(height) {}
 
-    virtual ~Application() {}
+    virtual ~Application() = default;
     virtual void onCreate() {}
     virtual void onAcquireContext() {}
     virtual void onResize(int width, int height) {}

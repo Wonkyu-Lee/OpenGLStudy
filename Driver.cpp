@@ -1,15 +1,16 @@
 //
-// Created by blazeq on 2018. 10. 11..
+// Created by blazeq on 26/10/2018.
 //
 
-#include <iostream>
+#include "Driver.h"
 #include "Application.h"
+#include <iostream>
 
 using namespace std;
 
-class DriverSdl {
-public:
-    bool runApplication(Application& application) {
+class DriverSdl : public Driver {
+private:
+    bool runApplication(Application& application) override {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
             cerr << "Failed to init SDL" << endl;
             return false;
@@ -62,7 +63,6 @@ public:
         return true;
     }
 
-private:
     void exitIfErrorOccurs(int line) {
         auto* error = SDL_GetError();
         if (error) {
@@ -73,8 +73,6 @@ private:
     }
 };
 
-int main(void) {
-    auto application = unique_ptr<Application>(Application::create());
-    auto driver = make_unique<DriverSdl>();
-    return driver->runApplication(*application) ? 0 : 1;
+unique_ptr<Driver> Driver::create() {
+    return unique_ptr<Driver>(new DriverSdl());
 }
