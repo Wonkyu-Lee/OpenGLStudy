@@ -3,7 +3,7 @@ project(examples)
 set(SOURCE_FILES
     main.cpp
     TessellationApp.cpp TessellationApp.h
-)
+        BlankApp.cpp BlankApp.h)
 
 add_executable(examples ${SOURCE_FILES})
 
