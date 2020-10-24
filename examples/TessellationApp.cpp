@@ -3,6 +3,7 @@
 //
 
 #include "TessellationApp.h"
+#include <cmath>
 #include <iostream>
 #include <unordered_map>
 #include <vector>
@@ -34,19 +35,63 @@ void main(void) {
 }
 )";
 
+const GLchar* VERTEX_SHADER_F = R"(
+#version 410 core
+void main(void) {
+    const vec4 vertices[3] = vec4[3](
+        vec4(%f, %f, 0.5, 1.0),
+        vec4(%f, %f, 0.5, 1.0),
+        vec4(%f, %f, 0.5, 1.0)
+    );
+    gl_Position = vertices[gl_VertexID];
+}
+)";
+
+const GLchar* getTriangleVertexShader() {
+    char buf[1024];
+    float r = 0.8f;
+    sprintf(buf, VERTEX_SHADER_F,
+            0.0f, r,
+            (- r * cos(M_PI/6)), (- r * sin(M_PI/6)),
+            (r * cos(M_PI/6)), (- r * sin(M_PI/6)));
+    return buf;
+}
+
 const GLchar* TESS_CONTROL_SHADER = R"(
 #version 410 core
 layout (vertices = 3) out;
 void main(void) {
     if (gl_InvocationID == 0) {
-        gl_TessLevelInner[0] = 1.0;
-        gl_TessLevelOuter[0] = 3.0;
+        gl_TessLevelInner[0] = 0;
+        gl_TessLevelOuter[0] = 1.0;
         gl_TessLevelOuter[1] = 1.0;
         gl_TessLevelOuter[2] = 1.0;
     }
     gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 }
 )";
+
+const GLchar* TESS_CONTROL_SHADER_TRI_F = R"(
+#version 410 core
+layout (vertices = 3) out;
+void main(void) {
+    if (gl_InvocationID == 0) {
+        gl_TessLevelInner[0] = %f;
+        gl_TessLevelOuter[0] = %f;
+        gl_TessLevelOuter[1] = %f;
+        gl_TessLevelOuter[2] = %f;
+    }
+    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+}
+)";
+
+const GLchar* getTessCtlShader(float inner, float outer[3]) {
+    char buf[1024];
+    sprintf(buf, TESS_CONTROL_SHADER_TRI_F,
+            inner, outer[0], outer[1], outer[2]);
+    printf(buf);
+    return buf;
+}
 
 const GLchar* TESS_EVALUATION_SHADER = R"(
 #version 410 core
@@ -102,8 +147,9 @@ void TessellationApp::onAcquireContext() {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glPatchParameteri(GL_PATCH_VERTICES, 3); // same as default setting
 
-    GLuint vertexShader = gl::compileShader(VERTEX_SHADER, GL_VERTEX_SHADER);
-    GLuint tessControlShader = gl::compileShader(TESS_CONTROL_SHADER, GL_TESS_CONTROL_SHADER);
+    float outer[] = {1.0f, 1.0f, 1.0f};
+    GLuint vertexShader = gl::compileShader(getTriangleVertexShader(), GL_VERTEX_SHADER);
+    GLuint tessControlShader = gl::compileShader(getTessCtlShader(6.0f, outer), GL_TESS_CONTROL_SHADER);
     GLuint tessEvaluationShader = gl::compileShader(TESS_EVALUATION_SHADER, GL_TESS_EVALUATION_SHADER);
     GLuint fragmentShader = gl::compileShader(FRAGMENT_SHADER, GL_FRAGMENT_SHADER);
 
